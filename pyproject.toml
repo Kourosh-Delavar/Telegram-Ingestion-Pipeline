@@ -10,7 +10,9 @@ dependencies = [
     "dotenv",
     "pathlib",
     "opencv-python",
-    "easyocr"
+    "easyocr",
+    "pdfplumber",
+    "python-docx",
 ]
 
 [tool.setuptools.packages.find]
