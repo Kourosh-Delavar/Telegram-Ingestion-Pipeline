@@ -13,6 +13,9 @@ dependencies = [
     "easyocr",
     "pdfplumber",
     "python-docx",
+    "openai-whisper",
+    "chromadb",
+    "asyncio",
 ]
 
 [tool.setuptools.packages.find]
