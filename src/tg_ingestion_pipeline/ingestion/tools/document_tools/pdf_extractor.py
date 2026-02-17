@@ -3,6 +3,14 @@ import pdfplumber as pdfPlumber
 
 
 def extract_text_from_pdf(file_path) -> Optional[str]:
+    """
+    Extract text from a PDF file.
+    
+    :param file_path: Path to the PDF file to be processed
+    :return: The extracted text or None if processing fails
+    :rtype: str | None
+    """
+
     try:
         with pdfPlumber.open(file_path) as pdf:
             text = ""

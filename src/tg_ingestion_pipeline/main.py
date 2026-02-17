@@ -1,50 +1,76 @@
+import logging
 import os
-from dotenv import load_dotenv 
-from telegram import Update 
+from typing import Optional, Dict, Any
+from pathlib import Path
+from dotenv import load_dotenv
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
     MessageHandler,
     filters,
 )
+from handlers import (
+    handle_message,
+    handle_photo,
+    handle_document,
+    handle_audio,
+)
+from tg_ingestion_pipeline.loading.save_media_files import save_media_files
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Load environment variables from .env file
 load_dotenv()
 
-app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable is not set.")
 
-# Extracting text message 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message
+
+def setup_handlers(app) -> None:
+    """
+    Register message handlers.
     
-    data = {
-        "type": "text",
-        "mesasage_id": msg.message_id,
-        "content": msg.text,
-        "chat_id": msg.chat_id,
-        "user_id": msg.from_user.id if msg.from_user else None,
-        "user_name": msg.from_user.username if msg.from_user else None,
-        "date": msg.date.isoformat(),
-        "reply_to": msg.reply_to_message.message_id if msg.reply_to_message else None
-    }
-
-    print(data)
-
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message
+    :param app: Telegram Application object
+    :type app: Application
+    """
     
-    data = {
-        "type": "photo",
-        "message_id": msg.message_id,
-        "content": [photo.file_id for photo in msg.photo],
-        "chat_id": msg.chat_id,
-        "user_id": msg.from_user.id if msg.from_user else None,
-        "user_name": msg.from_user.username if msg.from_user else None,
-        "date": msg.date.isoformat(),
-        "reply_to": msg.reply_to_message.message_id if msg.reply_to_message else None
-    }
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    # Add handler for saving messages containing media files to the data/ directory
+    app.add_handler(MessageHandler(filter.PHOTO 
+                                   | filters.Document.ALL  
+                                   | filters.AUDIO 
+                                   | filters.VOICE,
+                                     save_media_files))
 
-    print(data)
+def main() -> None:
+    """
+    Main entry point for the bot.
 
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-app.run_polling()
+    :return: None
+    """
+
+    logger.info("Starting Telegram ingestion bot")
+    
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    setup_handlers(app)
+
+    try:
+        app.run_polling()
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Bot encountered an error: {e}")
+
+
+if __name__ == "__main__":
+    main()

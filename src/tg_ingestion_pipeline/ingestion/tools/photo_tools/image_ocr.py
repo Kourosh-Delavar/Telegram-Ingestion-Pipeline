@@ -2,6 +2,15 @@ from typing import Optional, List
 import easyocr
 
 def ocr(image_path) -> Optional[List[str]]:
+    """
+    Perform OCR on the given image file.
+    
+    :param image_path: Path to the image file to be processed
+    :return: List of extracted text lines or None if processing fails
+    :rtype: List[str] | None
+    """
+
+
     try: 
         reader = easyocr.Reader(['en'], gpu=False, verbose=True)
         results = reader.readtext(image_path)
