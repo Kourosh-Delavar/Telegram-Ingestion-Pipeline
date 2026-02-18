@@ -1,7 +1,6 @@
 from typing import Optional, Dict
 from telegram import Update, Message
 from telegram.ext import ContextTypes
-from path_loader import load_paths
 
 
 async def save_media_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
