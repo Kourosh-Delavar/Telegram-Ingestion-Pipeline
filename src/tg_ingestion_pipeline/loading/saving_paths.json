@@ -1,0 +1,12 @@
+{
+    "photos": "../../../data/tg_files/photos",
+    "documents": {
+        "pdf": "../../../data/tg_files/documents/pdf",
+        "docx": "../../../data/tg_files/documents/docx",
+        "txt": "../../../data/tg_files/documents/txt"
+    },
+    "audio": {
+        "music": "../../../data/tg_files/audios/music",
+        "voice": "../../../data/tg_files/audios/voice"
+    }
+}
