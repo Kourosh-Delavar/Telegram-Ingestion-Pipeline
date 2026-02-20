@@ -6,8 +6,18 @@ import logging
 
 
 class KafkaOrchestrator:
+    """
+    KafkaOrchestrator is a class responsible for managing the Kafka producer and sending messages to specified Kafka topics.
+    It provides methods for initializing the producer, reporting delivery results, and sending messages in JSON format to Kafka topics.
+    
+    :param conf: A dictionary containing the configuration parameters for the Kafka producer, such as bootstrap servers, client ID, acknowledgment settings, and compression type.
+    :type conf: Dict[str, Any]
+    """
+
+
     def __init__(self, conf: Dict[str, Any]):
         self.producer = Producer(conf or {})
+
 
     @staticmethod
     def _delivery_report(self, err, msg) -> None:
@@ -24,6 +34,7 @@ class KafkaOrchestrator:
             logging.error(f"Message delivery failed: {err}")
         else:
             logging.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+
 
     def send_message(self, topic: str, key: str, data: Dict[str, Any]) -> None:
         """
