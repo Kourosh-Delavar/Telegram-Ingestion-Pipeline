@@ -2,7 +2,8 @@ import logging
 from typing import Any, Dict, Optional
 from telegram import Update
 from telegram.ext import ContextTypes
-from utils.base_msg import extract_base_message_data 
+from .utils.base_msg import extract_base_message_data
+from loading.save_media_files import save_media_files 
 
 
 # Configure logging
@@ -35,6 +36,10 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Op
             **extract_base_message_data(msg),
         }
         logger.info(f"Audio message received from {msg.from_user.username}")
+        
+        # Save the audio file
+        await save_media_files(update, context)
+        
         return data
     except Exception as e:
         logger.error(f"Error handling audio message: {e}")

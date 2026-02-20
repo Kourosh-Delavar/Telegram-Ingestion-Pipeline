@@ -10,13 +10,11 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from handlers import (
-    handle_message,
-    handle_photo,
-    handle_document,
-    handle_audio,
-)
-from tg_ingestion_pipeline.loading.save_media_files import save_media_files
+from handlers.message import handle_message
+from handlers.photo import handle_photo
+from handlers.document import handle_document
+from handlers.audio import handle_audio
+from loading.save_media_files import save_media_files
 
 # Configure logging
 logging.basicConfig(
@@ -41,16 +39,29 @@ def setup_handlers(app) -> None:
     :type app: Application
     """
     
+    logger.info("Setting up handlers...")
+    
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    logger.info("Added TEXT handler")
+    
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    logger.info("Added PHOTO handler (primary)")
+    
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    logger.info("Added DOCUMENT handler (primary)")
+    
     app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    logger.info("Added AUDIO handler (primary)")
+    
     # Add handler for saving messages containing media files to the data/ directory
-    app.add_handler(MessageHandler(filter.PHOTO 
+    logger.info(f"Adding save_media_files handler with filters: PHOTO | Document.ALL | AUDIO | VOICE")
+    app.add_handler(MessageHandler(filters.PHOTO 
                                    | filters.Document.ALL  
                                    | filters.AUDIO 
                                    | filters.VOICE,
                                      save_media_files))
+    logger.info("Added save_media_files handler (secondary)")
+    logger.info("All handlers registered successfully")
 
 def main() -> None:
     """
@@ -60,11 +71,16 @@ def main() -> None:
     """
 
     logger.info("Starting Telegram ingestion bot")
+    logger.info(f"save_media_files function: {save_media_files}")
     
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+    logger.info("Application built successfully")
+    
     setup_handlers(app)
+    logger.info("Handlers setup completed")
 
     try:
+        logger.info("Starting polling...")
         app.run_polling()
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")

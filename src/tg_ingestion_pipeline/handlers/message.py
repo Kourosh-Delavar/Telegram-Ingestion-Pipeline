@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Optional
 from telegram import Update
 from telegram.ext import ContextTypes
-from utils.base_msg import extract_base_message_data 
+from .utils.base_msg import extract_base_message_data 
 
 
 # Configure logging
