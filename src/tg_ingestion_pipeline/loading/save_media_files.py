@@ -1,3 +1,11 @@
+"""
+Module: save_media_files
+Description: This module contains the function to save media files from Telegram messages to the data directory.
+Functions:
+- save_media_files: Asynchronously saves media files (photos, documents, audio) from Telegram
+    messages to the appropriate subdirectories in the data directory.
+"""
+
 import logging
 from typing import Optional, Dict
 from telegram import Update, Message
@@ -6,6 +14,7 @@ import json
 import traceback
 from pathlib import Path
 import io
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -22,6 +31,7 @@ async def save_media_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     :param context: The Telegram context object
     :type context: ContextTypes.DEFAULT_TYPE
     """
+
     try:
         logger.info("=== save_media_files called ===")
         logger.info(f"Update object: {update}")
@@ -38,15 +48,15 @@ async def save_media_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             logger.info(f"Paths loaded successfully from {json_file}: {paths}")
         except FileNotFoundError as e:
             logger.error(f"Error: saving_paths.json not found at {json_file}. Exception: {e}")
-            return
+            return None
         except Exception as e:
             logger.error(f"Error loading paths JSON: {e}")
-            return
+            return None
 
         msg: Optional[Message] = update.message
         if not msg:
             logger.warning("No message object found in update")
-            return
+            return None
         
         logger.info(f"Message type - Photo: {bool(msg.photo)}, Document: {bool(msg.document)}, Audio: {bool(msg.audio)}, Voice: {bool(msg.voice)}")
         
