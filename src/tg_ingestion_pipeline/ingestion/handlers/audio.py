@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from ingestion.tools.audio_tools.sst import transcribe
 import json
-from confluent_kafka import Producer
+from kafka.kafka_engine import KafkaOrchestrator
 
 
 # Configure logging
@@ -26,14 +26,6 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         context: Telegram Context object
     """
 
-
-    # Configure Kafka producer (running on localhost:9092 by default)
-    conf = {
-        'bootstrap.servers': 'localhost:9092',
-        'client.id': 'sst-module-01',
-        'acks': 'all',
-        'compression.type': 'snappy'
-    }
 
     try:
         msg = update.message
@@ -87,8 +79,17 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 **extract_base_message_data(msg),
             }
             logger.info(f"Audio message received from {msg.from_user.username} without transcription. Using file_id as content.")
-        print(data) # TEST
-        return data # TODO: save the data somewhere 
+        
+        # Configure Kafka producer (running on localhost:9092 by default)
+        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
+        conf = json.load(open(cfg_path))["audio_handler"]
+        
+        kafka = KafkaOrchestrator(conf)
+        kafka.send_message(
+            topic = "extracted-data",
+            key = file_id,
+            data = data
+        )
     except Exception as e:
         logger.error(f"Error handling audio message: {e}")
         return None
