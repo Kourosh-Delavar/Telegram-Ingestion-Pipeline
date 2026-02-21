@@ -43,8 +43,8 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         # Data directory for saving audio files
         base_dir = Path(__file__).parent.parent.parent.parent
-        music_dir = base_dir / "data" / "audio" / "music"
-        voice_dir = base_dir / "data" / "audio" / "voice"
+        music_dir = base_dir / "data" / "audios" / "music"
+        voice_dir = base_dir / "data" / "audios" / "voice"
 
         # Finding subdirectory based on audio type
         if msg.audio.mime_type and "music" in msg.audio.mime_type:
@@ -62,7 +62,7 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         except Exception as e:
             logger.error(f"Error during audio transcription: {e}")
             extracted_content = None
-            
+
         # Create the data dictionary using the extracted content if available, otherwise fallback to file_id
         if extracted_content is not None:
             data = {
@@ -83,7 +83,7 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 "mime_type": msg.audio.mime_type,
                 **extract_base_message_data(msg),
             }
-            logger.info(f"Audio message received from {msg.from_user.username} without transcription. Using file_id as content.")
+            logger.info(f"Audio message received from {msg.from_user.username} without extracted content. Using file_id as content.")
         
         # Configure Kafka producer (running on localhost:9092 by default)
         cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"

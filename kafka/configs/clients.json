@@ -16,5 +16,11 @@
         "client.id": "document-handler-01",
         "acks": "all",
         "compression.type": "snappy"
+    },
+    "message_handler": {
+        "bootstrap.servers": "localhost:9092",
+        "client.id": "message-handler-01",
+        "acks": "all",
+        "compression.type": "snappy"
     }
 }

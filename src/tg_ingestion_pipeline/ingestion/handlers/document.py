@@ -5,11 +5,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from .utils.mime_type_converter import mime_type_to_extension
-from ingestion.tools.document_tools import (
-    pdf_extractor,
-    docx_extractor,
-    txt_extractor
-)
+from ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
+from ingestion.tools.document_tools.docx_extractor import extract_text_from_docx
+from ingestion.tools.document_tools.txt_extractor import extract_text_from_txt_file
 import json
 from kafka.kafka_engine import KafkaOrchestrator
 
@@ -47,9 +45,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         # Data directory for saving document files
         base_dir = Path(__file__).parent.parent.parent.parent
-        pdf_dir = base_dir / "data" / "document" / "pdf"
-        docx_dir = base_dir / "data" / "document" / "docx"
-        txt_dir = base_dir / "data" / "document" / "txt"
+        pdf_dir = base_dir / "data" / "documents" / "pdf"
+        docx_dir = base_dir / "data" / "documents" / "docx"
+        txt_dir = base_dir / "data" / "documents" / "txt"
 
         # Finding subdirectory based on document type
         file_extension = mime_type_to_extension(mime_type, media_type="document")        
@@ -66,11 +64,11 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         # Scan the document
         try:
             if "pdf" in file_extension:
-                extracted_content: Optional[str] = await pdf_extractor(data_dir / f"{file_id}.{file_extension}")
+                extracted_content: Optional[str] = await extract_text_from_pdf(data_dir / f"{file_id}.{file_extension}")
             elif "docx" in file_extension:
-                extracted_content: Optional[str] = await docx_extractor(data_dir / f"{file_id}.{file_extension}")            
+                extracted_content: Optional[str] = await extract_text_from_docx(data_dir / f"{file_id}.{file_extension}")            
             elif "txt" in file_extension:
-                extracted_content: Optional[str] = await txt_extractor(data_dir / f"{file_id}.{file_extension}")
+                extracted_content: Optional[str] = await extract_text_from_txt_file(data_dir / f"{file_id}.{file_extension}")
         except Exception as e:
             logger.error(f"Error during document scanning: {e}")
             extracted_content = None
@@ -94,9 +92,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "mime_type": msg.document.mime_type,
                 **extract_base_message_data(msg),
             }
-            logger.info(f"Audio message received from {msg.from_user.username} without transcription. Using file_id as content.")
+            logger.info(f"Audio message received from {msg.from_user.username} without extracted content. Using file_id as content.")
 
-                # Configure Kafka producer (running on localhost:9092 by default)
+        # Configure Kafka producer (running on localhost:9092 by default)
         cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
         conf = json.load(open(cfg_path))["document_handler"]
         
