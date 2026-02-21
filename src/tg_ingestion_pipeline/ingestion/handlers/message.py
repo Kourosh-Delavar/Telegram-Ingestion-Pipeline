@@ -4,7 +4,8 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data 
-
+import json
+from kafka.kafka_engine import KafkaOrchestrator
 
 # Configure logging
 logging.basicConfig(
@@ -31,13 +32,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             logger.warning("Received text message without content")
             return None
 
+        msg_id = msg.effective_message.message_id
+
         data = {
             "type": "text",
             "content": msg.text,
             **extract_base_message_data(msg),
         }
         logger.info(f"Text message received from {msg.from_user.username}")
-        return data
+        
+        # Configure Kafka producer (running on localhost:9092 by default)
+        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
+        conf = json.load(open(cfg_path))["message_handler"]
+        
+        kafka = KafkaOrchestrator(conf)
+        kafka.send_message(
+            topic = "extracted-data",
+            key = msg_id,
+            data = data
+        )
     except Exception as e:
         logger.error(f"Error handling text message: {e}")
         return None
