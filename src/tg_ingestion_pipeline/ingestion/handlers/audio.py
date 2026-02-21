@@ -62,6 +62,7 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         except Exception as e:
             logger.error(f"Error during audio transcription: {e}")
             extracted_content = None
+            
         # Create the data dictionary using the extracted content if available, otherwise fallback to file_id
         if extracted_content is not None:
             data = {

@@ -52,28 +52,61 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         txt_dir = base_dir / "data" / "document" / "txt"
 
         # Finding subdirectory based on document type
-        file_extension = mime_type_to_extension(mime_type, media_type="document")
-        
-        extension_to_dir = {
-            "pdf": pdf_dir,
-            "docx": docx_dir,
-            "doc": docx_dir,
-            "txt": txt_dir,
-            "html": txt_dir,
-            "rtf": txt_dir,
-        }
-        
-        target_dir = extension_to_dir.get(file_extension, txt_dir) 
+        file_extension = mime_type_to_extension(mime_type, media_type="document")        
+        if "pdf" in file_extension:
+            data_dir = pdf_dir
+        elif "docx" in file_extension:
+            data_dir = docx_dir
+        elif "txt" in file_extension:
+            data_dir = txt_dir
+        else:
+            logger.warning(f"Unknown document type for mime_type: {msg.document.mime_type}")
+            data_dir = txt_dir
 
-        data = {
-            "type": "document",
-            "content": msg.document.file_id,
-            "file_name": msg.document.file_name,
-            "mime_type": msg.document.mime_type,
-            **extract_base_message_data(msg),
-        }
-        logger.info(f"Document message received from {msg.from_user.username}")
+        # Scan the document
+        try:
+            if "pdf" in file_extension:
+                extracted_content: Optional[str] = await pdf_extractor(data_dir / f"{file_id}.{file_extension}")
+            elif "docx" in file_extension:
+                extracted_content: Optional[str] = await docx_extractor(data_dir / f"{file_id}.{file_extension}")            
+            elif "txt" in file_extension:
+                extracted_content: Optional[str] = await txt_extractor(data_dir / f"{file_id}.{file_extension}")
+        except Exception as e:
+            logger.error(f"Error during document scanning: {e}")
+            extracted_content = None
+
+        if extracted_content is not None:
+            data = {
+                "file_id": file_id,
+                "type": "document",
+                "content": extracted_content,
+                "file_name": msg.document.file_name,
+                "mime_type": msg.document.mime_type,
+                **extract_base_message_data(msg),
+            }
+            logger.info(f"Document message received from {msg.from_user.username}")
+        else:
+            data = {
+                "file_id": file_id,
+                "type": "document",
+                "content": file_id,
+                "file_name": msg.document.file_name,
+                "mime_type": msg.document.mime_type,
+                **extract_base_message_data(msg),
+            }
+            logger.info(f"Audio message received from {msg.from_user.username} without transcription. Using file_id as content.")
+
+        # Configure Kafka producer (running on localhost:9092 by default)
+        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
+        conf = json.load(open(cfg_path))["document_handler"]
         
+        kafka = KafkaOrchestrator(conf)
+        kafka.send_message(
+            topic = "extracted-data",
+            key = file_id,
+            data = data
+        )
+
     except Exception as e:
         logger.error(f"Error handling document message: {e}")
         return None
