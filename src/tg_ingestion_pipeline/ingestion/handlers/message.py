@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data 
@@ -13,13 +14,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Dict[str, Any]]:
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handle text messages.
     
-    args:
-        update: Telegram Update object
-        context: Telegram Context object
+    :param update: Telegram Update object
+    :type update: Update
+    :param context: Telegram Context object
+    :type context: ContextTypes.DEFAULT_TYPE
+    :return: None
     """
     
     try:

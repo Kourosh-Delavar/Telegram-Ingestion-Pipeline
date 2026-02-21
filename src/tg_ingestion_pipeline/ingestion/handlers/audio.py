@@ -1,9 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
+from .utils.mime_type_converter import mime_type_to_extension
 from ingestion.tools.audio_tools.sst import transcribe
 import json
 from kafka.kafka_engine import KafkaOrchestrator
@@ -21,9 +22,11 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     Handle audio messages.
     
-    args:
-        update: Telegram Update object
-        context: Telegram Context object
+    :param update: Telegram Update object
+    :type update: Update
+    :param context: Telegram Context object
+    :type context: ContextTypes.DEFAULT_TYPE
+    :return: None
     """
 
 
@@ -53,8 +56,9 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             data_dir = music_dir  # Default to music directory
         
         # Transcribe the audio file 
-        try: 
-            extracted_content: Optional[str] = await transcribe(data_dir / f"{file_id}.{mime_type}")
+        try:
+            file_extension = mime_type_to_extension(mime_type, media_type="audio")
+            extracted_content: Optional[str] = await transcribe(data_dir / f"{file_id}.{file_extension}")
         except Exception as e:
             logger.error(f"Error during audio transcription: {e}")
             extracted_content = None

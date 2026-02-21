@@ -1,8 +1,10 @@
 import logging
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
+from .utils.mime_type_converter import mime_type_to_extension
 from loading.save_media_files import save_media_files 
 
 
@@ -14,13 +16,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Dict[str, Any]]:
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handle photo messages.
     
-    args:
-        update: Telegram Update object
-        context: Telegram Context object
+    :param update: Telegram Update object
+    :type update: Update
+    :param context: Telegram Context object
+    :type context: ContextTypes.DEFAULT_TYPE
+    :return: None
     """
 
     try:
