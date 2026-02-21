@@ -96,7 +96,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             }
             logger.info(f"Audio message received from {msg.from_user.username} without transcription. Using file_id as content.")
 
-        # Configure Kafka producer (running on localhost:9092 by default)
+                # Configure Kafka producer (running on localhost:9092 by default)
         cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
         conf = json.load(open(cfg_path))["document_handler"]
         
@@ -106,7 +106,6 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             key = file_id,
             data = data
         )
-
     except Exception as e:
         logger.error(f"Error handling document message: {e}")
         return None
