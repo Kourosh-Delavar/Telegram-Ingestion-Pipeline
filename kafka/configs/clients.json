@@ -1,0 +1,26 @@
+{
+    "audio_handler": {
+        "bootstrap.servers": "localhost:9092",
+        "client.id": "sst-module-01",
+        "acks": "all",
+        "compression.type": "snappy"
+    },
+    "photo_handler": {
+        "bootstrap.servers": "localhost:9092",
+        "client.id": "photo-handler-01",
+        "acks": "all",
+        "compression.type": "snappy"
+    },
+    "document_handler": {
+        "bootstrap.servers": "localhost:9092",
+        "client.id": "document-handler-01",
+        "acks": "all",
+        "compression.type": "snappy"
+    },
+    "message_handler": {
+        "bootstrap.servers": "localhost:9092",
+        "client.id": "message-handler-01",
+        "acks": "all",
+        "compression.type": "snappy"
+    }
+}
