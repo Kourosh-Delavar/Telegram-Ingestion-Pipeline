@@ -14,7 +14,7 @@ from handlers.message import handle_message             # FIX imports
 from handlers.photo import handle_photo                 # FIX imports
 from handlers.document import handle_document           # FIX imports
 from handlers.audio import handle_audio                 # FIX imports
-from loading.save_media_files import save_media_files
+from loading.saving.save_media_files import save_media_files
 
 # Configure logging
 logging.basicConfig(
