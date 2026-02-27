@@ -60,3 +60,16 @@ class KafkaOrchestrator:
             self.producer.flush(timeout=10.0)
         except Exception as e:
             logging.error(f"Failed to send message to kafka topic {topic}: {e}")
+
+    def consume_messages(self, topic: str, group_id: str) -> None:
+        """"
+        Consume messages from a specified Kafka topic using a consumer group ID.
+        
+        :param self: KafkaOrchestrator instance
+        :param topic: the kafka topic from which messages should be consumed
+        :type topic: str
+        :param group_id: the consumer group ID to be used for consuming messages
+        :type group_id: str
+        :return: None
+        """
+        pass
