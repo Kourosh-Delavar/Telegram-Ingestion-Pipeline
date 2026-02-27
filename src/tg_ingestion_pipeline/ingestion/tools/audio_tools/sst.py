@@ -12,6 +12,7 @@ def transcribe(audio_path) -> Optional[str]:
     """
 
     try:
+        # Check if GPU is available 
         device = "cuda" if whisper.is_cuda_available() else "cpu"
         model = whisper.load_model("base", device=device) 
         result = model.transcribe(audio_path, fp16=False)

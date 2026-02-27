@@ -12,7 +12,9 @@ def ocr(image_path) -> Optional[str]:
 
 
     try: 
-        reader = easyocr.Reader(['en'], gpu=False, verbose=True)
+        # Check if GPU is available 
+        device = "cuda" if easyocr.Reader.is_cuda_available() else "cpu"
+        reader = easyocr.Reader(['en'], gpu=(device=="cuda"), verbose=True)
         results = reader.readtext(image_path)
         text: List[str] = [r[1] for r in results]
         return "\n".join(text)
