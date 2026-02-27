@@ -11,7 +11,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+logger = logging.getLogger(__name__)
 
 class KafkaOrchestrator:
     """
@@ -40,9 +40,9 @@ class KafkaOrchestrator:
 
 
         if err is not None:
-            logging.error(f"Message delivery failed: {err}")
+            logger.error(f"Message delivery failed: {err}")
         else:
-            logging.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+            logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
 
 
     def send_message(self, topic: str, key: str, data: Dict[str, Any]) -> None:
@@ -61,7 +61,7 @@ class KafkaOrchestrator:
 
         try:
             if not self.producer:
-                logging.error("Producer is not initialized.")
+                logger.error("Producer is not initialized.")
                 return
             
             # Serialize the data to Avro format using the schema from the schema registry
@@ -69,7 +69,7 @@ class KafkaOrchestrator:
                 with open('kafka/schemas/schema.json', 'r') as f:
                     schema_str = f.read()
             except Exception as e:
-                logging.error(f"Failed to read schema file: {e}")
+                logger.error(f"Failed to read schema file: {e}")
                 return
             sr_client = SchemaRegistryClient({'url': 'http://localhost:8081'})
             avro_serializer = AvroSerializer(sr_client, schema_str)
@@ -82,9 +82,9 @@ class KafkaOrchestrator:
                 callback = self._delivery_report 
             )
             self.producer.flush()
-            logging.info(f"Message sent to topic {topic} with key {key}")
+            logger.info(f"Message sent to topic {topic} with key {key}")
         except Exception as e:
-            logging.error(f"Failed to send message to kafka topic {topic}: {e}")
+            logger.error(f"Failed to send message to kafka topic {topic}: {e}")
 
 
     def consume_messages(self, topic: str, group_id: str) -> None:
