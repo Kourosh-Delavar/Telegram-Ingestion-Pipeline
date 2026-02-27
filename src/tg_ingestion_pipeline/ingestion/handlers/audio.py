@@ -84,7 +84,7 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 **extract_base_message_data(msg),
             }
             logger.info(f"Audio message received from {msg.from_user.username} without extracted content. Using file_id as content.")
-        
+
         # Configure Kafka producer (running on localhost:9092 by default)
         cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
         conf = json.load(open(cfg_path))["audio_handler"]
