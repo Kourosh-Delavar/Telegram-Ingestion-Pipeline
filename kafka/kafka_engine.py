@@ -64,7 +64,7 @@ class KafkaOrchestrator:
                 logger.error("Producer is not initialized.")
                 return
             
-            # Serialize the data to Avro format using the schema from the schema registry
+            # Serialize the data to Avro format using the schema from schema registry
             try:
                 with open('kafka/schemas/schema.json', 'r') as f:
                     schema_str = f.read()
