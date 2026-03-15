@@ -45,7 +45,7 @@ class KafkaOrchestrator:
             logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
 
 
-    def send_message(self, topic: str, key: str, data: Dict[str, Any]) -> None:
+    def send_message(self, topic: str, key: str, data: Dict[str, Any], schema_path: str) -> None:
         """
         Send a message to a specified Kafka topic with the given key and data.
         
@@ -56,6 +56,8 @@ class KafkaOrchestrator:
         :type key: str
         :param data: the message content to be sent, which will be serialized to JSON format
         :type data: Dict[str, Any]
+        :param schema_path: the file path to the Avro schema that will be used for serializing the message
+        :type schema_path: str 
         :return: None
         """
 
@@ -87,7 +89,7 @@ class KafkaOrchestrator:
             logger.error(f"Failed to send message to kafka topic {topic}: {e}")
 
 
-    def consume_messages(self, topic: str, group_id: str) -> None:
+    def consume_message(self, topic: str, group_id: str) -> None:
         """"
         Consume messages from a specified Kafka topic using a consumer group ID.
         
