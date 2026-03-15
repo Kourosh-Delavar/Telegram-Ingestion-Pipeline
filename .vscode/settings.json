@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /home/kourosh/projects/Telegram-Ingestion-Pipeline && source venv/bin/activate && python -m pytest tests/kafka_test/kafka_broker_test\\.py -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

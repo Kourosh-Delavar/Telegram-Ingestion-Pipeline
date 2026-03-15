@@ -21,6 +21,9 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.packages]
+packages = ["kafka", "tg_ingestion_pipeline"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",

@@ -99,4 +99,28 @@ class KafkaOrchestrator:
         :return: None
         """
 
-        pass
+        # Configure the consumer
+        conf = {
+            'bootstrap.servers': 'localhost:9092',
+            'group.id': group_id,
+            'auto.offset.reset': 'earliest'
+        }
+        
+        consumer = Consumer(conf)
+        consumer.subscribe([topic])
+        logger.info(f"Subscribed to topic {topic} with group ID {group_id}")
+
+        # Poll for messages
+        try:
+            while True:
+                msg = consumer.poll(1.0)
+                if msg is None:
+                    continue
+                if msg.error():
+                    logger.error(f"Consumer error: {msg.error()}")
+                    continue
+                yield msg.value().decode('utf-8')
+        except Exception as e:
+            logger.error(f"Failed to consume messages from kafka topic {topic}: {e}")
+        finally:
+            consumer.close()
