@@ -22,22 +22,19 @@ class KafkaOrchestrator:
     :type conf: Dict[str, Any]
     """
 
-
     def __init__(self, conf: Dict[str, Any]):
         self.producer = Producer(conf or {})
 
 
     @staticmethod
-    def _delivery_report(self, err, msg) -> None:
+    def _delivery_report(err, msg) -> None:
         """
-        Report the devlivery result of a message sent to a topic by the producer.
+        Report the delivery result of a message sent to a topic by the producer.
         
-        :param self: KafkaOrchestrator instance 
         :param err: error information if the message failed to deliver, otherwise None
         :param msg: the message that was produced
         :return: None
         """
-
 
         if err is not None:
             logger.error(f"Message delivery failed: {err}")
@@ -68,19 +65,20 @@ class KafkaOrchestrator:
             
             # Serialize the data to Avro format using the schema from schema registry
             try:
-                with open('kafka/schemas/schema.json', 'r') as f:
+                with open(schema_path, 'r') as f:
                     schema_str = f.read()
             except Exception as e:
                 logger.error(f"Failed to read schema file: {e}")
-                return
+                schema_str = None    
             sr_client = SchemaRegistryClient({'url': 'http://localhost:8081'})
             avro_serializer = AvroSerializer(sr_client, schema_str)
 
             # Produce the message to the specified topic
+            self.producer.poll(0)
             self.producer.produce(
                 topic = topic,
                 key = key,
-                value = avro_serializer(data, SerializationContext(topic, MessageField.VALUE)),
+                value = json.dumps(data).encode('utf-8'),
                 callback = self._delivery_report 
             )
             self.producer.flush()
