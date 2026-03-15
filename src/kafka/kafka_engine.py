@@ -22,22 +22,19 @@ class KafkaOrchestrator:
     :type conf: Dict[str, Any]
     """
 
-
     def __init__(self, conf: Dict[str, Any]):
         self.producer = Producer(conf or {})
 
 
     @staticmethod
-    def _delivery_report(self, err, msg) -> None:
+    def _delivery_report(err, msg) -> None:
         """
-        Report the devlivery result of a message sent to a topic by the producer.
+        Report the delivery result of a message sent to a topic by the producer.
         
-        :param self: KafkaOrchestrator instance 
         :param err: error information if the message failed to deliver, otherwise None
         :param msg: the message that was produced
         :return: None
         """
-
 
         if err is not None:
             logger.error(f"Message delivery failed: {err}")
@@ -45,7 +42,7 @@ class KafkaOrchestrator:
             logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
 
 
-    def send_message(self, topic: str, key: str, data: Dict[str, Any]) -> None:
+    def send_message(self, topic: str, key: str, data: Dict[str, Any], schema_path: str) -> None:
         """
         Send a message to a specified Kafka topic with the given key and data.
         
@@ -56,6 +53,8 @@ class KafkaOrchestrator:
         :type key: str
         :param data: the message content to be sent, which will be serialized to JSON format
         :type data: Dict[str, Any]
+        :param schema_path: the file path to the Avro schema that will be used for serializing the message
+        :type schema_path: str 
         :return: None
         """
 
@@ -64,21 +63,22 @@ class KafkaOrchestrator:
                 logger.error("Producer is not initialized.")
                 return
             
-            # Serialize the data to Avro format using the schema from the schema registry
+            # Serialize the data to Avro format using the schema from schema registry
             try:
-                with open('kafka/schemas/schema.json', 'r') as f:
+                with open(schema_path, 'r') as f:
                     schema_str = f.read()
             except Exception as e:
                 logger.error(f"Failed to read schema file: {e}")
-                return
+                schema_str = None    
             sr_client = SchemaRegistryClient({'url': 'http://localhost:8081'})
             avro_serializer = AvroSerializer(sr_client, schema_str)
 
             # Produce the message to the specified topic
+            self.producer.poll(0)
             self.producer.produce(
                 topic = topic,
                 key = key,
-                value = avro_serializer(data, SerializationContext(topic, MessageField.VALUE)),
+                value = json.dumps(data).encode('utf-8'),
                 callback = self._delivery_report 
             )
             self.producer.flush()
@@ -87,7 +87,7 @@ class KafkaOrchestrator:
             logger.error(f"Failed to send message to kafka topic {topic}: {e}")
 
 
-    def consume_messages(self, topic: str, group_id: str) -> None:
+    def consume_message(self, topic: str, group_id: str) -> None:
         """"
         Consume messages from a specified Kafka topic using a consumer group ID.
         
@@ -99,4 +99,28 @@ class KafkaOrchestrator:
         :return: None
         """
 
-        pass
+        # Configure the consumer
+        conf = {
+            'bootstrap.servers': 'localhost:9092',
+            'group.id': group_id,
+            'auto.offset.reset': 'earliest'
+        }
+        
+        consumer = Consumer(conf)
+        consumer.subscribe([topic])
+        logger.info(f"Subscribed to topic {topic} with group ID {group_id}")
+
+        # Poll for messages
+        try:
+            while True:
+                msg = consumer.poll(1.0)
+                if msg is None:
+                    continue
+                if msg.error():
+                    logger.error(f"Consumer error: {msg.error()}")
+                    continue
+                yield msg.value().decode('utf-8')
+        except Exception as e:
+            logger.error(f"Failed to consume messages from kafka topic {topic}: {e}")
+        finally:
+            consumer.close()

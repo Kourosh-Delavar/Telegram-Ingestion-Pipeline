@@ -14,13 +14,12 @@ dependencies = [
     "pdfplumber",
     "python-docx",
     "openai-whisper",
-    "chromadb",
     "asyncio",
     "confluent-kafka",
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
 
 [project.optional-dependencies]
 dev = [
