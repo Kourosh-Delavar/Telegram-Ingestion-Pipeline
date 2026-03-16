@@ -10,10 +10,10 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from handlers.message import handle_message             # FIX imports
-from handlers.photo import handle_photo                 # FIX imports
-from handlers.document import handle_document           # FIX imports
-from handlers.audio import handle_audio                 # FIX imports
+from ingestion.handlers.message import handle_message             
+from ingestion.handlers.photo import handle_photo                 
+from ingestion.handlers.document import handle_document           
+from ingestion.handlers.audio import handle_audio                 
 from loading.saving.save_media_files import save_media_files
 
 # Configure logging
