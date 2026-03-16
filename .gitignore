@@ -9,6 +9,9 @@ __pycache__/
 # Data folder
 data/
 
+# vscode settings
+.vscode/
+
 # Distribution / packaging
 .Python
 build/
