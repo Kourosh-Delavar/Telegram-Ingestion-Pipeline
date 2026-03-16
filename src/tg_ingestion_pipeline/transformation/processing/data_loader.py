@@ -7,6 +7,9 @@ from typing import Dict, Any
 import json
 from kafka.kafka_engine import KafkaOrchestrator
 
+# Configure logging 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 async def load_data_from_kafka(topic: str, group_id: str) -> Dict[str, Any]:
     """
