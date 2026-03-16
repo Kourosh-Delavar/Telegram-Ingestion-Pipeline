@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Generator 
 from confluent_kafka import Producer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroSerializer
@@ -87,7 +87,7 @@ class KafkaOrchestrator:
             logger.error(f"Failed to send message to kafka topic {topic}: {e}")
 
 
-    def consume_message(self, topic: str, group_id: str) -> None:
+    def consume_message(self, topic: str, group_id: str) -> Generator[str, None, None]:
         """"
         Consume messages from a specified Kafka topic using a consumer group ID.
         
@@ -96,10 +96,11 @@ class KafkaOrchestrator:
         :type topic: str
         :param group_id: the consumer group ID to be used for consuming messages
         :type group_id: str
-        :return: None
+        :return: Generator[str, None, None]
         """
 
         # Configure the consumer
+        # TODO: make the conf configurable and load it from a config file
         conf = {
             'bootstrap.servers': 'localhost:9092',
             'group.id': group_id,
@@ -113,13 +114,13 @@ class KafkaOrchestrator:
         # Poll for messages
         try:
             while True:
-                msg = consumer.poll(1.0)
+                msg = consumer.poll(1.0) # TODO: make the timeout configurable
                 if msg is None:
                     continue
                 if msg.error():
                     logger.error(f"Consumer error: {msg.error()}")
                     continue
-                yield msg.value().decode('utf-8')
+                yield msg.value()
         except Exception as e:
             logger.error(f"Failed to consume messages from kafka topic {topic}: {e}")
         finally:
