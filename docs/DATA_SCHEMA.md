@@ -19,28 +19,28 @@ This schema defines the structure of messages ingested from Telegram. It support
 
 | Field       | Type             | Default | Description       |
 | ----------- | ---------------- | ------- | ----------------- |
-| `user_id`   | `long \| null`   | `null`  | Telegram user ID  |
-| `user_name` | `string \| null` | `null`  | Telegram username |
+| `user_id`   | `long | null`   | `null`  | Telegram user ID  |
+| `user_name` | `string | null` | `null`  | Telegram username |
 
 ### Message Relationships
 
 | Field      | Type           | Default | Description                               |
 | ---------- | -------------- | ------- | ----------------------------------------- |
-| `reply_to` | `long \| null` | `null`  | ID of the message this message replies to |
+| `reply_to` | `long | null` | `null`  | ID of the message this message replies to |
 
 ### Media Metadata
 
 | Field       | Type             | Default | Description                          |
 | ----------- | ---------------- | ------- | ------------------------------------ |
-| `file_id`   | `string \| null` | `null`  | Telegram file identifier (for media) |
-| `mime_type` | `string \| null` | `null`  | MIME type of the media file          |
-| `file_name` | `string \| null` | `null`  | Name of the document file            |
+| `file_id`   | `string | null` | `null`  | Telegram file identifier (for media) |
+| `mime_type` | `string | null` | `null`  | MIME type of the media file          |
+| `file_name` | `string | null` | `null`  | Name of the document file            |
 
 ### Audio Metadata
 
 | Field      | Type          | Default | Description                  |
 | ---------- | ------------- | ------- | ---------------------------- |
-| `duration` | `int \| null` | `null`  | Duration of audio in seconds |
+| `duration` | `int | null` | `null`  | Duration of audio in seconds |
 
 ## Notes
 
