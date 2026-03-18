@@ -1,0 +1,8 @@
+{
+    "test_handler": {
+        "bootstrap.servers": "127.0.0.1:9092",
+        "client.id": "test-module-01",
+        "acks": "all",
+        "compression.type": "snappy"
+    } 
+}
