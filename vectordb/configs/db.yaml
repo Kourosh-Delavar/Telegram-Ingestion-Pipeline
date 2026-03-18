@@ -1,4 +1,4 @@
-db:
+db: 
   vector_db:
     type: "qdrant"
     qdrant:
