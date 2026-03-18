@@ -51,4 +51,4 @@ This schema defines the structure of messages ingested from Telegram. It support
   * Raw text (for text messages)
   * Transcribed speech (for audio messages)
   * OCR-extracted text (for photo messages)
-  * Text from PDF, DOCX and TXT (for document messages)
+  * Text extracted from PDF, DOCX and TXT files (for document messages)
