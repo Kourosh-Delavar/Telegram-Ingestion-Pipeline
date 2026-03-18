@@ -1,3 +1,4 @@
+[Home](index.md) | [Data Schema](DATA_SCHEMA.md) | [Architecture](ARCHITECTURE.md)
 # Telegram Message Data Schema
 
 This schema defines the structure of messages ingested from Telegram. It supports multiple message types including text, audio, photos, and documents.
