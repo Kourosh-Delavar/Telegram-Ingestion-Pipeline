@@ -16,6 +16,7 @@ dependencies = [
     "openai-whisper",
     "asyncio",
     "confluent-kafka",
+    "psycopg2-binary",
 ]
 
 [tool.setuptools.packages.find]
