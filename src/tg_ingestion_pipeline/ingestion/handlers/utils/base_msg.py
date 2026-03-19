@@ -1,12 +1,12 @@
 from typing import Any, Dict, Optional
 
-
 def extract_user_info(user) -> Dict[str, Any]:
     """
     Extract user information from a User object.
 
-    args:
-        user: Telegram User object
+    :param user: Telegram user object 
+    :type user: User
+    :return: Dict[str, Any]
     """
 
     return {
@@ -19,8 +19,9 @@ def extract_base_message_data(msg) -> Dict[str, Any]:
     """
     Extract common message data fields.
     
-    args:
-        msg: Telegram Message object
+    :param msg: Telegram message object
+    :type msg: Message
+    :return: Dict[str, Any]
     """
     
     return {
