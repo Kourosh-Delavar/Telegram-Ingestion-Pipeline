@@ -17,7 +17,7 @@ INIT_SQL_PATH = "./db/postgres/schema/001_create_tables.sql"
 
 def initialize_db(conn) -> None:
     """
-    Executes SQL files using connection object to initialize the database
+    Executes query using connection object to initialize the database
 
     :param conn: Connection object
     :type conn: Connection
@@ -26,8 +26,8 @@ def initialize_db(conn) -> None:
 
     try:
         with conn.cursor() as curs:
-            sql = get_sql(INIT_SQL_PATH)
-            curs.execute(sql)
+            query = get_query(INIT_SQL_PATH)
+            curs.execute(query)
             curs.commit()
             logger.info("Database initialized successfully")
     except Exception as e:
