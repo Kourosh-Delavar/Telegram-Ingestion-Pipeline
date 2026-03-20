@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 # from psycopg2.extras import execute_batch
 from .connect_db import get_connection
-from .utils.get_sql_file import get_sql
+from .utils.get_query import get_query
 
 # Configure logging
 logging.basicConfig(
@@ -23,7 +23,7 @@ def insert_data(conn) -> bool:
     """
 
     try:
-        with get_sql(INSERT_SQL_PATH) as query:
+        with get_query(INSERT_SQL_PATH) as query:
             logger.info("Inserting data to the database...") # TODO: Mention DB_NAME in the logging message
             with conn.cursor() as curs:
                 curs.execute(query)
