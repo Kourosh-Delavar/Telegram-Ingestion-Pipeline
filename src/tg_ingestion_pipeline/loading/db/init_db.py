@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 # Path to SQL file used for initializing the database 
 INIT_SQL_PATH = "./db/postgres/schema/001_create_tables.sql"
 
-def initialize_db(conn) -> None:
+def initialize_db(conn) -> bool:
     """
     Executes query using connection object to initialize the database
 
     :param conn: Connection object
     :type conn: Connection
-    :return: None 
+    :return: bool
     """
 
     try:
@@ -30,10 +30,11 @@ def initialize_db(conn) -> None:
             curs.execute(query)
             curs.commit()
             logger.info("Database initialized successfully")
+            return True
     except Exception as e:
         conn.rollback()
         logger.error(f"Error initializing database: {e}")
-        raise
+        return False
     finally:
         curs.close()
         conn.close()
