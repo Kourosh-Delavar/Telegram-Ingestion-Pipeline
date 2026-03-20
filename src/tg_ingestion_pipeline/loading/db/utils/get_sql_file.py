@@ -18,7 +18,7 @@ def get_sql(sql_path: str) -> Optional[str]:
     """
 
     try:
-        logger.info(f"Loading SQL file from {sql_path}")
+        logger.info(f"Loading SQL file from {sql_path} ...")
         with open(sql_path, 'r', encoding='utf-8') as f:
             sql = f.read()
             if sql is not None:
