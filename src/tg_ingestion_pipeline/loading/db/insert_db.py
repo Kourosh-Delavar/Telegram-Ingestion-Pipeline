@@ -37,12 +37,12 @@ def insert_data(conn) -> bool:
                 else:
                     logger.info(f"Query executed and affected {affected} row(s) successfully")
                     return True
-
-                curs.close()
-                conn.close()
     except Exception as e:
         conn.rollback()
         logger.error(f"Error inserting data: {e}")
         return False
+    finally:
+        curs.close()
+        conn.close()
 
 # TODO: Add execute_batch capability 
