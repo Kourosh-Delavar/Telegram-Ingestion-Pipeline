@@ -39,7 +39,7 @@ def setup_handlers(app) -> None:
     :return: None
     """
     
-    logger.info("Setting the handlers up...")
+    logger.info("Registering the message handlers...")
     
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     logger.info("Add TEXT handler")
@@ -60,6 +60,7 @@ def setup_handlers(app) -> None:
                                    | filters.VOICE,
                                      save_media_files))
     logger.info(f"Add save_media_files handler with filters: PHOTO | Document.ALL | AUDIO | VOICE")
+    
     logger.info("All handlers registered successfully")
 
 def main() -> None:
