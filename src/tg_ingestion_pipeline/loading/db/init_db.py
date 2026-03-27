@@ -1,8 +1,7 @@
 import logging
-from typing import Optional
 # from psycopg2.extras import execute_batch
-from pathlib import Path
-from .connect_db import get_connection
+# from pathlib import Path
+    # TODO: Use pathlib for better paths
 from .utils.get_query import get_query
 
 # Configure logging
