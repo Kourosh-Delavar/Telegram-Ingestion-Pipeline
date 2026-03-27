@@ -24,6 +24,7 @@ def initialize_db(conn) -> bool:
     """
 
     try:
+        logger.info("Initializing the database...")
         with conn.cursor() as curs:
             query = get_query(INIT_SQL_PATH)
             curs.execute(query)
