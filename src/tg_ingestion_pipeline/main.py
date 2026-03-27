@@ -15,6 +15,8 @@ from ingestion.handlers.photo import handle_photo
 from ingestion.handlers.document import handle_document           
 from ingestion.handlers.audio import handle_audio                 
 from loading.saving.save_media_files import save_media_files
+from loading.db.connect_db import get_connection 
+from loading.db.init_db import initialize_db
 
 # Configure logging
 logging.basicConfig(
@@ -66,8 +68,12 @@ def setup_handlers(app) -> None:
 def main() -> None:
     
     logger.info("Starting Telegram ingestion bot...")
-    
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    # Setup the database
+    conn = get_connection()
+    initialize_db(conn=conn)
+
     logger.info("Application built successfully")
     
     setup_handlers(app)
