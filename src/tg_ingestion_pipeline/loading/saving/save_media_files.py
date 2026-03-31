@@ -1,11 +1,3 @@
-"""
-Module: save_media_files
-Description: This module contains the function to save media files from Telegram messages to the data directory.
-Functions:
-- save_media_files: Asynchronously saves media files (photos, documents, audio) from Telegram
-    messages to the appropriate subdirectories in the data directory.
-"""
-
 import logging
 from typing import Optional, Dict
 from telegram import Update, Message
@@ -33,7 +25,7 @@ async def save_media_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     """
 
     try:
-        logger.info("=== save_media_files called ===")
+        logger.info("save_media_files called...")
         logger.info(f"Update object: {update}")
         logger.info(f"Update message: {update.message if update else 'No update'}")
 
