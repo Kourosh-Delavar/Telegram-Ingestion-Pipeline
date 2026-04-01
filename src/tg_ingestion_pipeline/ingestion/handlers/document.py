@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Optional
+import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
@@ -63,12 +64,28 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         # Scan the document
         try:
-            if "pdf" in file_extension:
-                extracted_content: Optional[str] = await extract_text_from_pdf(data_dir / f"{file_id}.{file_extension}")
-            elif "docx" in file_extension:
-                extracted_content: Optional[str] = await extract_text_from_docx(data_dir / f"{file_id}.{file_extension}")            
-            elif "txt" in file_extension:
-                extracted_content: Optional[str] = await extract_text_from_txt_file(data_dir / f"{file_id}.{file_extension}")
+            file_path = data_dir / f"{file_id}.{file_extension}"
+            
+            # Retry logic to wait for file download
+            max_retries = 10
+            retry_delay = 1  # initial delay in seconds
+            extracted_content = None
+            for attempt in range(max_retries):
+                if file_path.exists():
+                    if "pdf" in file_extension:
+                        extracted_content = await extract_text_from_pdf(file_path)
+                    elif "docx" in file_extension:
+                        extracted_content = await extract_text_from_docx(file_path)            
+                    elif "txt" in file_extension:
+                        extracted_content = await extract_text_from_txt_file(file_path)
+                    break
+                else:
+                    logger.warning(f"Document file not found at {file_path}, attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # exponential backoff
+            else:
+                logger.error(f"Document file not found after {max_retries} attempts at {file_path}")
+                
         except Exception as e:
             logger.error(f"Error during document scanning: {e}")
             extracted_content = None

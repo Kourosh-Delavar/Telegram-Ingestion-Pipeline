@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Optional
+import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
@@ -58,7 +59,23 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         # Transcribe the audio file 
         try:
             file_extension = mime_type_to_extension(mime_type, media_type="audio")
-            extracted_content: Optional[str] = await transcribe(data_dir / f"{file_id}.{file_extension}")
+            file_path = Path(data_dir / f"{file_id}.{file_extension}")
+            
+            # Retry logic to wait for file download
+            max_retries = 10
+            retry_delay = 1  # initial delay in seconds
+            extracted_content = None
+            for attempt in range(max_retries):
+                if file_path.exists():
+                    extracted_content = await transcribe(file_path)
+                    break
+                else:
+                    logger.warning(f"Audio file not found at {file_path}, attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # exponential backoff
+            else:
+                logger.error(f"Audio file not found after {max_retries} attempts at {file_path}")
+                
         except Exception as e:
             logger.error(f"Error during audio transcription: {e}")
             extracted_content = None

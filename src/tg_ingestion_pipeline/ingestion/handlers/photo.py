@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Optional, List
+import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
@@ -35,9 +36,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             logger.warning("Received photo message without content")
             return None
 
-        file_id: str = msg.photo.file_id
+# Use the largest photo (last in the list)
+        photo = msg.photo[-1]
+        file_id: str = photo.file_id
         logger.info(f"Photo file_id: {file_id}")
-        mime_type: Optional[str] = msg.photo.mime_type.lower() if msg.photo.mime_type else None
+        mime_type: Optional[str] = photo.mime_type.lower() if photo.mime_type else None
         logger.info(f"Photo mime_type: {mime_type}")
 
         # Data directory for saving photo files
@@ -46,11 +49,29 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         # OCR the photo
         try:
-            extracted_contents: List[str] = [await ocr(photo) for photo in msg.photo]
-            text_content: str = "\n".join(extracted_contents)  
+            file_extension = mime_type_to_extension(mime_type, media_type="photo")
+            file_path = photo_dir / f"{file_id}.{file_extension}"
+            
+            # Retry logic to wait for file download
+            max_retries = 10
+            retry_delay = 1  # initial delay in seconds
+            extracted_content = None
+            for attempt in range(max_retries):
+                if file_path.exists():
+                    extracted_content = ocr(str(file_path))
+                    break
+                else:
+                    logger.warning(f"Photo file not found at {file_path}, attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # exponential backoff
+            else:
+                logger.error(f"Photo file not found after {max_retries} attempts at {file_path}")
+                
         except Exception as e:
             logger.error(f"Error during photo OCR: {e}")
             extracted_content = None
+
+        text_content = extracted_content if extracted_content is not None else ""
 
         if extracted_content is not None:
             data = {
