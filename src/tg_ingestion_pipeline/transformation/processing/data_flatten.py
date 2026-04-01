@@ -1,7 +1,3 @@
-"""
-Data flatten module: Contains the DataFlattener class responsible for flattening nested data structures in the deserialized messages for vectorization and storage in the vector database.
-"""
-
 from typing import Dict, Any, Generator
 import logging 
 
