@@ -120,7 +120,7 @@ class KafkaOrchestrator:
                 if msg.error():
                     logger.error(f"Consumer error: {msg.error()}")
                     continue
-                yield msg.value()
+                yield json.loads(msg.value().decode('utf-8'))
         except Exception as e:
             logger.error(f"Failed to consume messages from kafka topic {topic}: {e}")
         finally:
