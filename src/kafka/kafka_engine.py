@@ -113,7 +113,7 @@ class KafkaOrchestrator:
 
         # Poll for messages
         try:
-            while True:
+            while not self._stop_event.is_set():
                 msg = consumer.poll(1.0) # TODO: make the timeout configurable
                 if msg is None:
                     continue
