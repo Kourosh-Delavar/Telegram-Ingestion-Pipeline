@@ -1,6 +1,5 @@
 import logging 
 from typing import Dict, Any, AsyncGenerator
-import json
 from kafka.kafka_engine import KafkaOrchestrator
 
 # Configure logging 
