@@ -6,9 +6,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from .utils.mime_type_converter import mime_type_to_extension
-from ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
-from ingestion.tools.document_tools.docx_extractor import extract_text_from_docx
-from ingestion.tools.document_tools.txt_extractor import extract_text_from_txt_file
+from tg_ingestion_pipeline.ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
+from tg_ingestion_pipeline.ingestion.tools.document_tools.docx_extractor import extract_text_from_docx
+from tg_ingestion_pipeline.ingestion.tools.document_tools.txt_extractor import extract_text_from_txt_file
 import json
 from kafka.kafka_engine import KafkaOrchestrator
 
