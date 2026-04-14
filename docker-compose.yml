@@ -35,21 +35,7 @@ services:
         POSTGRES_DB: ${POSTGRES_DB}
       volumes:
         - postgres_data:/var/lib/postgresql/data
-       
-    qdrant:
-      image: qdrant/qdrant:latest
-      container_name: qdrant
-      ports:
-        - "${QDRANT_HOST}:${QDRANT_PORT}"
-      env_file:
-        - .env.qdrant
-      restart: always
-      environment:
-        QDRANT__SERVICE__STORAGE_PATH: /qdrant/storage
-      volumes:
-        - qdrant_data:/qdrant/storagei  
-         
+
 volumes:
   kafka_data:
   postgres_data:
-  qdrant_data:
