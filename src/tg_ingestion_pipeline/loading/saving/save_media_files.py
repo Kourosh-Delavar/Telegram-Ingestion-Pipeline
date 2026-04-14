@@ -52,8 +52,8 @@ async def save_media_files(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         
         logger.info(f"Message type - Photo: {bool(msg.photo)}, Document: {bool(msg.document)}, Audio: {bool(msg.audio)}, Voice: {bool(msg.voice)}")
         
-        # Convert relative paths to absolute paths
-        base_dir = Path(__file__).parent.parent.parent.parent
+        # Convert relative paths to absolute paths from the repository root
+        base_dir = Path(__file__).resolve().parents[4]
         data_dir = base_dir / "data" / "tg_files"
         data_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Data directory: {data_dir}")
