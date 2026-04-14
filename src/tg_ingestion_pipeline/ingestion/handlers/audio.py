@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from .utils.mime_type_converter import mime_type_to_extension
-from ingestion.tools.audio_tools.sst import transcribe
+from tg_ingestion_pipeline.ingestion.tools.audio_tools.sst import transcribe
 import json
 from kafka.kafka_engine import KafkaOrchestrator
 
