@@ -1,23 +1,26 @@
-from typing import List
-from tg_ingestion_pipeline.ingestion.tools.audio_tools.sst import transcribe
-from pathlib import Path
+import importlib
+import sys
+from types import SimpleNamespace
 
-def transcribe_test(path_list: List[str]) -> None:
-    for path in path_list:
-        result = transcribe(path)
-        if result is not None:
-            print(f"\nTranscription successful for {path}:\n{result}\n")
-        else: 
-            print(f"\nTranscription failed for {path}")
 
-base_dir = Path(__file__).resolve().parent.parent.parent
-audio_dir = base_dir / "resources" / "audio"
-path_list = [str(p) for p in audio_dir.glob("*.mp3")] + \
-            [str(p) for p in audio_dir.glob("*.wav")] + \
-            [str(p) for p in audio_dir.glob("*.ogg")]
-if path_list:
-    print(f"\nFound {len(path_list)} audio files to process.")
-else: 
-    print("\nNo audio files found to process.")
+def test_sst_transcribe_handles_failure(monkeypatch):
+    class DummyWhisper:
+        @staticmethod
+        def is_cuda_available():
+            return False
 
-transcribe_test(path_list)
+        @staticmethod
+        def load_model(name, device=None):
+            class DummyModel:
+                def transcribe(self, audio_path, fp16=False):
+                    raise FileNotFoundError("audio model missing")
+
+            return DummyModel()
+
+    monkeypatch.setitem(sys.modules, "whisper", DummyWhisper)
+    module_name = "tg_ingestion_pipeline.ingestion.tools.audio_tools.sst"
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
+    sst_module = importlib.import_module(module_name)
+    assert sst_module.transcribe("missing_file.mp3") is None
