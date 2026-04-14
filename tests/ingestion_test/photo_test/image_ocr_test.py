@@ -1,21 +1,25 @@
-from typing import List
-from tg_ingestion_pipeline.ingestion.tools.photo_tools import image_ocr
-from pathlib import Path
+import importlib
+import sys
+from types import SimpleNamespace
 
-def test_ocr(path_list: List[str]) -> None:
-    for path in path_list:
-        text = image_ocr.ocr(path)
-        if text is not None:
-            print(f"\nText extracted successfully from {path}:\n{text}\n")
-        else:
-            print(f"\nFailed to extract text from {path}")
 
-base_dir = Path(__file__).resolve().parent.parent.parent
-photo_dir = base_dir / "resources" / "photo"
-path_list: List[str] = [str(p) for p in photo_dir.glob("*.png")] + [str(p) for p in photo_dir.glob("*.jpg")]
-if path_list:
-    print(f"\nFound {len(path_list)} image files to process.")
-else:
-    print("\nNo image files found to process.")
+def test_image_ocr_handles_failure(monkeypatch):
+    class DummyReader:
+        @staticmethod
+        def is_cuda_available():
+            return False
 
-test_ocr(path_list)
+        def __init__(self, langs, gpu, verbose):
+            pass
+
+        def readtext(self, image_path):
+            raise FileNotFoundError("image missing")
+
+    dummy_module = SimpleNamespace(Reader=DummyReader)
+    monkeypatch.setitem(sys.modules, "easyocr", dummy_module)
+    module_name = "tg_ingestion_pipeline.ingestion.tools.photo_tools.image_ocr"
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
+    image_ocr = importlib.import_module(module_name)
+    assert image_ocr.ocr("missing_image.png") is None
