@@ -1,21 +1,11 @@
-from typing import Optional, List
-from tg_ingestion_pipeline.ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
 from pathlib import Path
+from tg_ingestion_pipeline.ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
 
-def test_pdf_extractor(paths: List[str]) -> None:
-    for path in paths: 
-        text = extract_text_from_pdf(path)
-        if text is not None:
-            print(f"\nText extracted successfully from {path}:\n{text}\n")
-        else:
-            print(f"\nFailed to extract text from {path}")
 
-base_dir = Path(__file__).resolve().parent.parent.parent
-document_dir = base_dir / "resources" / "document"
-paths: List[str] = [str(d) for d in document_dir.glob("*.pdf")] 
-if paths:
-    print(f"\nFound {len(paths)} PDF files to process.")
-else:
-    print("\nNo PDF files found to process.")
+def test_extract_text_from_pdf_sample():
+    pdf_path = Path(__file__).resolve().parents[3] / "tests" / "resources" / "document" / "sample.pdf"
+    assert pdf_path.exists()
 
-test_pdf_extractor(paths)
+    extracted_text = extract_text_from_pdf(pdf_path)
+    assert extracted_text is not None
+    assert len(extracted_text.strip()) > 0
