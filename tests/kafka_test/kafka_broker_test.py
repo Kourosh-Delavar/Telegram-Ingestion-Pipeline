@@ -1,14 +1,16 @@
-"""
-Kafka Broker Test
-This module contains unit tests for the kafka engine to ensure KafkaOrchestrator is functioning correctly.
-"""
-
+import os
+import pytest
 from typing import Dict, Any, Generator
 from random import randint
 import logging
 import json
 from pathlib import Path 
 from kafka.kafka_engine import KafkaOrchestrator
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("RUN_KAFKA_TESTS", "0") != "1",
+    reason="Kafka integration tests are disabled by default. Set RUN_KAFKA_TESTS=1 to enable."
+)
 
 # Configure logging for testing
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
