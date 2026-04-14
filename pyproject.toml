@@ -7,16 +7,16 @@ dependencies = [
     "pillow",
     "pytesseract",
     "python-telegram-bot",
-    "dotenv",
-    "pathlib",
+    "python-dotenv",
     "opencv-python",
     "easyocr",
     "pdfplumber",
     "python-docx",
     "openai-whisper",
-    "asyncio",
     "confluent-kafka",
     "psycopg2-binary",
+    "weaviate-client>=3.0.0",
+    "sentence-transformers>=2.2.0",
 ]
 
 [tool.setuptools.packages.find]
