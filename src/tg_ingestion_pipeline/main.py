@@ -1,22 +1,19 @@
 import logging
 import os
-from typing import Optional, Dict, Any
-from pathlib import Path
 from dotenv import load_dotenv
-from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
-    ContextTypes,
     MessageHandler,
     filters,
 )
-from ingestion.handlers.message import handle_message             
-from ingestion.handlers.photo import handle_photo                 
-from ingestion.handlers.document import handle_document           
-from ingestion.handlers.audio import handle_audio                 
-from loading.saving.save_media_files import save_media_files
-from loading.db.connect_db import get_connection 
-from loading.db.init_db import initialize_db
+from tg_ingestion_pipeline.ingestion.handlers.message import handle_message             
+from tg_ingestion_pipeline.ingestion.handlers.photo import handle_photo                 
+from tg_ingestion_pipeline.ingestion.handlers.document import handle_document           
+from tg_ingestion_pipeline.ingestion.handlers.audio import handle_audio                 
+from tg_ingestion_pipeline.loading.saving.save_media_files import save_media_files
+from tg_ingestion_pipeline.loading.db.connect_db import get_connection 
+from tg_ingestion_pipeline.loading.db.init_db import initialize_db
+from tg_ingestion_pipeline.transformation.processing.pipeline import TelegramDataPipeline
 
 # Configure logging
 logging.basicConfig(
@@ -70,9 +67,15 @@ def main() -> None:
     logger.info("Starting Telegram ingestion bot...")
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Setup the database
     conn = get_connection()
+    if conn is None:
+        raise RuntimeError('Unable to connect to PostgreSQL. Check DB environment variables.')
+
     initialize_db(conn=conn)
+
+    pipeline = TelegramDataPipeline()
+    pipeline.start_async()
+    logger.info('Background data pipeline started')
 
     logger.info("Application built successfully")
     
