@@ -1,7 +1,5 @@
 import logging
-# from psycopg2.extras import execute_batch
-# from pathlib import Path
-    # TODO: Use pathlib for better paths
+from pathlib import Path
 from .utils.get_query import get_query
 
 # Configure logging
@@ -11,35 +9,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Path to SQL file used for initializing the database 
-INIT_SQL_PATH = "./db/postgres/schema/001_create_tables.sql"
+BASE_DIR = Path(__file__).resolve().parents[3]
+INIT_SQL_PATH = BASE_DIR / "db" / "postgres" / "schema" / "001_create_tables.sql"
 
 def initialize_db(conn) -> bool:
     """
-    Executes query using connection object to initialize the database
+    Executes schema creation queries using the provided connection object.
 
     :param conn: Connection object
-    :type conn: Connection
     :return: bool
     """
 
     try:
-        logger.info("Initializing the database...")
+        logger.info("Initializing the relational database schema...")
         with conn.cursor() as curs:
-            query = get_query(INIT_SQL_PATH)
+            query = get_query(str(INIT_SQL_PATH))
             curs.execute(query)
-            curs.commit()
-            logger.info("Database initialized successfully")
-            return True
+        conn.commit()
+        logger.info("Database schema initialized successfully")
+        return True
     except Exception as e:
         conn.rollback()
         logger.error(f"Error initializing database: {e}")
         return False
     finally:
-        curs.close()
         conn.close()
-
-if __name__ == "__main__":
-    initialize_db()
-
-# TODO: Add batch execution capability using execute_batch
