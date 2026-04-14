@@ -1,21 +1,11 @@
-from typing import Optional, List
 from pathlib import Path
+from tg_ingestion_pipeline.ingestion.tools.document_tools.txt_extractor import extract_text_from_txt_file
 
-def test_txt_extractor(paths: List[str]) -> None:
-    for path in paths:
-        try:
-            with open(path, 'r', encoding='utf-8') as file:
-                text = file.read()
-                print(f"\nText extracted successfully from {path}:\n{text}\n")
-        except Exception as e:
-            print(f"\nFailed to extract text from {path}. Error: {e}")
 
-base_dir = Path(__file__).resolve().parent.parent.parent
-document_dir = base_dir / "resources" / "document"
-paths: List[str] = [str(d) for d in document_dir.glob("*.txt")]
-if paths:
-    print(f"\nFound {len(paths)} TXT files to process.")
-else:
-    print("\nNo TXT files found to process.")
+def test_extract_text_from_txt_file(tmp_path):
+    sample_text = "This is a text extractor test."
+    text_file = tmp_path / "sample.txt"
+    text_file.write_text(sample_text, encoding="utf-8")
 
-test_txt_extractor(paths)
+    extracted = extract_text_from_txt_file(text_file)
+    assert extracted == sample_text
