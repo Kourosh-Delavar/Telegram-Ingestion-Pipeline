@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS messages (
     -- Core fields
-    message_id BIGINT PRIMARY KEY,
+    message_id BIGINT NOT NULL,
     message_type VARCHAR(50) NOT NULL,
     message_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     chat_id BIGINT NOT NULL,
@@ -21,6 +21,5 @@ CREATE TABLE IF NOT EXISTS messages (
     -- Audio metadata (only for audio messages)
     duration_seconds INTEGER,
 
-    -- Primary key
     PRIMARY KEY (chat_id, message_id)
 );
