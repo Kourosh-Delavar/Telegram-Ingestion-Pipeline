@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from .utils.mime_type_converter import mime_type_to_extension
+from .utils.file_cleaner import delete_media_file
 from tg_ingestion_pipeline.ingestion.tools.photo_tools.image_ocr import ocr
 import json
 from kafka.kafka_engine import KafkaOrchestrator
@@ -100,6 +101,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             key = file_id,
             data = data
         )
+        
+        # Delete media file after successful extraction and Kafka message sending
+        delete_media_file(file_path)
     except Exception as e:
         logger.error(f"Error handling photo message: {e}")
         return None

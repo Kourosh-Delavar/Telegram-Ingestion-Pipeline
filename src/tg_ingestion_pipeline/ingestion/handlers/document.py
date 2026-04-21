@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
 from .utils.mime_type_converter import mime_type_to_extension
+from .utils.file_cleaner import delete_media_file
 from tg_ingestion_pipeline.ingestion.tools.document_tools.pdf_extractor import extract_text_from_pdf
 from tg_ingestion_pipeline.ingestion.tools.document_tools.docx_extractor import extract_text_from_docx
 from tg_ingestion_pipeline.ingestion.tools.document_tools.txt_extractor import extract_text_from_txt_file
@@ -121,6 +122,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             key = file_id,
             data = data
         )
+        
+        # Delete media file after successful extraction and Kafka message sending
+        delete_media_file(file_path)
     except Exception as e:
         logger.error(f"Error handling document message: {e}")
         return None
