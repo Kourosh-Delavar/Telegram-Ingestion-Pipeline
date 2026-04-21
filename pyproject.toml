@@ -1,8 +1,9 @@
 [project]
 name = "Telegram-Ingestion-Pipeline"
-version = "1.0.0"
-description = "A robust pipeline to extract text, media, events, and metadata from Telegram group chats and store them in a vector database, enabling retrieval-augmented generation (RAG) for LLMs based on group chat data."
+version = "1.1.0"
+description = "A robust ETL pipeline for Telegram group chats that ingests messages, extracts text and media metadata, transforms them into searchable content, and stores both structured records and vector embeddings for retrieval-augmented generation (RAG)."
 requires-python = ">=3.10"
+license = "MIT"
 dependencies = [
     "pillow",
     "pytesseract",
