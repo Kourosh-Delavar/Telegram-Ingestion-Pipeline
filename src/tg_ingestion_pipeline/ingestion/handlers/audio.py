@@ -1,22 +1,14 @@
 import logging
-from pathlib import Path
 from typing import Optional
-import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
-from .utils.mime_type_converter import mime_type_to_extension
 from .utils.file_cleaner import delete_media_file
 from tg_ingestion_pipeline.ingestion.tools.audio_tools.sst import transcribe
-import json
-from kafka.kafka_engine import KafkaOrchestrator
+from tg_ingestion_pipeline.ingestion.services.media_downloader import download_audio
+from tg_ingestion_pipeline.ingestion.services.message_publisher import publish_extracted_message
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -43,40 +35,11 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         mime_type: Optional[str] = msg.audio.mime_type.lower() if msg.audio.mime_type else None
         logger.info(f"Audio mime_type: {mime_type}")
 
-        # Data directory for saving audio files
-        base_dir = Path(__file__).parent.parent.parent.parent
-        music_dir = base_dir / "data" / "audios" / "music"
-        voice_dir = base_dir / "data" / "audios" / "voice"
-
-        # Finding subdirectory based on audio type
-        if msg.audio.mime_type and "music" in msg.audio.mime_type:
-            data_dir = music_dir
-        elif msg.audio.mime_type and "voice" in msg.audio.mime_type:
-            data_dir = voice_dir
-        else:
-            logger.warning(f"Unknown audio type for mime_type: {msg.audio.mime_type}")
-            data_dir = music_dir  # Default to music directory
-        
-        # Transcribe the audio file 
+        # Download and transcribe in the same handler to avoid race conditions.
+        file_path = None
         try:
-            file_extension = mime_type_to_extension(mime_type, media_type="audio")
-            file_path = Path(data_dir / f"{file_id}.{file_extension}")
-            
-            # Retry logic to wait for file download
-            max_retries = 10
-            retry_delay = 1  # initial delay in seconds
-            extracted_content = None
-            for attempt in range(max_retries):
-                if file_path.exists():
-                    extracted_content = await transcribe(file_path)
-                    break
-                else:
-                    logger.warning(f"Audio file not found at {file_path}, attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2  # exponential backoff
-            else:
-                logger.error(f"Audio file not found after {max_retries} attempts at {file_path}")
-                
+            file_path = await download_audio(context, file_id=file_id, mime_type=mime_type)
+            extracted_content = transcribe(file_path)
         except Exception as e:
             logger.error(f"Error during audio transcription: {e}")
             extracted_content = None
@@ -103,19 +66,11 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             }
             logger.info(f"Audio message received from {msg.from_user.username} without extracted content. Using file_id as content.")
 
-        # Configure Kafka producer (running on localhost:9092 by default)
-        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
-        conf = json.load(open(cfg_path))["audio_handler"]
-        
-        kafka = KafkaOrchestrator(conf)
-        kafka.send_message(
-            topic = "extracted-data",
-            key = file_id,
-            data = data
-        )
+        publish_extracted_message(key=file_id, data=data)
         
         # Delete media file after successful extraction and Kafka message sending
-        delete_media_file(file_path)
+        if file_path is not None:
+            delete_media_file(file_path)
     except Exception as e:
         logger.error(f"Error handling audio message: {e}")
         return None

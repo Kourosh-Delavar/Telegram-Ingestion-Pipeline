@@ -1,6 +1,4 @@
 import logging
-import os
-from dotenv import load_dotenv
 from telegram.ext import (
     ApplicationBuilder,
     MessageHandler,
@@ -10,21 +8,16 @@ from tg_ingestion_pipeline.ingestion.handlers.message import handle_message
 from tg_ingestion_pipeline.ingestion.handlers.photo import handle_photo                 
 from tg_ingestion_pipeline.ingestion.handlers.document import handle_document           
 from tg_ingestion_pipeline.ingestion.handlers.audio import handle_audio                 
-from tg_ingestion_pipeline.loading.saving.save_media_files import save_media_files
-from tg_ingestion_pipeline.loading.db.connect_db import get_connection 
+from tg_ingestion_pipeline.loading.db.connect_db import db_connection, init_connection_pool
 from tg_ingestion_pipeline.loading.db.init_db import initialize_db
 from tg_ingestion_pipeline.transformation.processing.pipeline import TelegramDataPipeline
+from tg_ingestion_pipeline.core.bootstrap import configure_logging
+from tg_ingestion_pipeline.core.settings import get_settings
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+configure_logging()
 logger = logging.getLogger(__name__)
 
-load_dotenv(".env.token") # TODO: Make the path to .env file configurable via environment variable or command-line argument
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = get_settings().bot_token
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN environment variable is not set.")
 
@@ -52,14 +45,6 @@ def setup_handlers(app) -> None:
     app.add_handler(MessageHandler(filters.AUDIO, handle_audio))
     logger.info("Add AUDIO handler (primary)")
     
-    # Add handler for saving messages containing media files to the data/ directory
-    app.add_handler(MessageHandler(filters.PHOTO 
-                                   | filters.Document.ALL  
-                                   | filters.AUDIO 
-                                   | filters.VOICE,
-                                     save_media_files))
-    logger.info(f"Add save_media_files handler with filters: PHOTO | Document.ALL | AUDIO | VOICE")
-    
     logger.info("All handlers registered successfully")
 
 def main() -> None:
@@ -67,17 +52,17 @@ def main() -> None:
     logger.info("Starting Telegram ingestion bot...")
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Try to connect to database, but allow bot to run without it (for testing)
-    conn = get_connection()
-    if conn is None:
+    if not init_connection_pool():
         logger.warning('Unable to connect to PostgreSQL. The bot will run without database support.')
         logger.warning('Make sure Docker containers are running: docker-compose up -d')
     else:
-        try:
-            initialize_db(conn=conn)
-            logger.info('Database initialized successfully')
-        except Exception as e:
-            logger.error(f"Error initializing database: {e}")
+        with db_connection() as conn:
+            if conn is not None:
+                try:
+                    initialize_db(conn=conn)
+                    logger.info('Database initialized successfully')
+                except Exception as e:
+                    logger.error(f"Error initializing database: {e}")
 
     # Start background pipeline if database is available
     try:

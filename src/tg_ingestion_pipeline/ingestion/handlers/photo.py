@@ -1,22 +1,13 @@
 import logging
-from pathlib import Path
-from typing import Optional, List
-import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data
-from .utils.mime_type_converter import mime_type_to_extension
 from .utils.file_cleaner import delete_media_file
 from tg_ingestion_pipeline.ingestion.tools.photo_tools.image_ocr import ocr
-import json
-from kafka.kafka_engine import KafkaOrchestrator
+from tg_ingestion_pipeline.ingestion.services.media_downloader import download_photo
+from tg_ingestion_pipeline.ingestion.services.message_publisher import publish_extracted_message
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -37,34 +28,15 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             logger.warning("Received photo message without content")
             return None
 
-# Use the largest photo (last in the list)
+        # Use the largest photo (last in the list)
         photo = msg.photo[-1]
         file_id: str = photo.file_id
         logger.info(f"Photo file_id: {file_id}")
-        # Photos don't have mime_type in Telegram API, default to jpg
-        mime_type: Optional[str] = "image/jpeg"
-        photo_dir = base_dir / "data" / "photos"
-
-        # OCR the photo
+        # Download and OCR the photo in the same handler to avoid cross-handler races.
+        file_path = None
         try:
-            file_extension = mime_type_to_extension(mime_type, media_type="photo")
-            file_path = photo_dir / f"{file_id}.{file_extension}"
-            
-            # Retry logic to wait for file download
-            max_retries = 10
-            retry_delay = 1  # initial delay in seconds
-            extracted_content = None
-            for attempt in range(max_retries):
-                if file_path.exists():
-                    extracted_content = ocr(str(file_path))
-                    break
-                else:
-                    logger.warning(f"Photo file not found at {file_path}, attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2  # exponential backoff
-            else:
-                logger.error(f"Photo file not found after {max_retries} attempts at {file_path}")
-                
+            file_path = await download_photo(context, file_id=file_id)
+            extracted_content = ocr(str(file_path))
         except Exception as e:
             logger.error(f"Error during photo OCR: {e}")
             extracted_content = None
@@ -88,19 +60,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             }
             logger.info(f"Photo message received from {msg.from_user.username} without extracted content. Using file_id as content.")
 
-        # Configure Kafka producer (running on localhost:9092 by default)
-        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
-        conf = json.load(open(cfg_path))["photo_handler"]
-        
-        kafka = KafkaOrchestrator(conf)
-        kafka.send_message(
-            topic = "extracted-data",
-            key = file_id,
-            data = data
-        )
+        publish_extracted_message(key=file_id, data=data)
         
         # Delete media file after successful extraction and Kafka message sending
-        delete_media_file(file_path)
+        if file_path is not None:
+            delete_media_file(file_path)
     except Exception as e:
         logger.error(f"Error handling photo message: {e}")
         return None

@@ -5,20 +5,13 @@ from confluent_kafka.schema_registry.avro import AvroSerializer
 import json
 import logging
 import threading
-import os
-from dotenv import load_dotenv
+from tg_ingestion_pipeline.core.settings import get_settings
 
-
-# Load environment variables
-load_dotenv('.env.kafka')
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Use environment variables for Docker/local configuration
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
-KAFKA_SCHEMA_REGISTRY_URL = os.getenv('KAFKA_SCHEMA_REGISTRY_URL', 'http://schema-registry:8081')
+SETTINGS = get_settings()
+KAFKA_BOOTSTRAP_SERVERS = SETTINGS.kafka_bootstrap_servers
+KAFKA_SCHEMA_REGISTRY_URL = SETTINGS.kafka_schema_registry_url
 
 DEFAULT_KAFKA_CONFIG = {
     'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
@@ -73,11 +66,17 @@ class KafkaOrchestrator:
         except Exception as e:
             logger.error(f"Failed to send message to kafka topic {topic}: {e}")
 
-    def consume_message(self, topic: str, group_id: str) -> Generator[Dict[str, Any], None, None]:
+    def consume_message(
+        self,
+        topic: str,
+        group_id: str,
+        dead_letter_topic: Optional[str] = None,
+    ) -> Generator[Dict[str, Any], None, None]:
         conf = {
             **DEFAULT_KAFKA_CONFIG,
             'group.id': group_id,
             'auto.offset.reset': 'earliest',
+            'enable.auto.commit': True,
         }
 
         consumer = Consumer(conf)
@@ -98,6 +97,18 @@ class KafkaOrchestrator:
                     yield json.loads(payload)
                 except Exception as e:
                     logger.error(f"Failed to parse Kafka message payload: {e}")
+                    if dead_letter_topic:
+                        self.send_message(
+                            topic=dead_letter_topic,
+                            key=f"parse-error-{msg.offset()}",
+                            data={
+                                "error": str(e),
+                                "topic": topic,
+                                "partition": msg.partition(),
+                                "offset": msg.offset(),
+                                "raw_payload": msg.value().decode("utf-8", errors="replace"),
+                            },
+                        )
         except Exception as e:
             logger.error(f"Failed to consume messages from kafka topic {topic}: {e}")
         finally:

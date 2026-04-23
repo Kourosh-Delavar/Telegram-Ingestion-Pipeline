@@ -1,10 +1,6 @@
 from logging import getLogger
-import logging
-from typing import Any, Dict, List, Optional
-import os
+from typing import Any, Dict, List
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = getLogger(__name__)
 
 class Vectorizer:
@@ -30,8 +26,7 @@ class Vectorizer:
             from sentence_transformers import SentenceTransformer
             logger.info(f"Loading sentence-transformers model: {self.model_name}")
             self.model = SentenceTransformer(self.model_name)
-            # Use get_embedding_dimension() instead of deprecated get_sentence_embedding_dimension()
-            embedding_dim = self.model.get_embedding_dimension()
+            embedding_dim = self._get_embedding_dimension()
             logger.info(f"Model loaded successfully. Embedding dimension: {embedding_dim}")
         except ImportError:
             logger.error("sentence-transformers not installed. Install with: pip install sentence-transformers")
@@ -76,7 +71,7 @@ class Vectorizer:
             full_text = f"Metadata: {metadata}"
         else:
             logger.warning("Empty payload received for embedding; returning zero vector.")
-            dimension = self.model.get_embedding_dimension() if self.model else 384
+            dimension = self._get_embedding_dimension()
             return [0.0] * dimension
 
         try:
@@ -86,5 +81,14 @@ class Vectorizer:
             return embedding
         except Exception as e:
             logger.error(f"Failed to generate embedding for text: {e}")
-            dimension = self.model.get_embedding_dimension() if self.model else 384
+            dimension = self._get_embedding_dimension()
             return [0.0] * dimension
+
+    def _get_embedding_dimension(self) -> int:
+        if not self.model:
+            return 384
+        if hasattr(self.model, "get_embedding_dimension"):
+            return self.model.get_embedding_dimension()
+        if hasattr(self.model, "get_sentence_embedding_dimension"):
+            return self.model.get_sentence_embedding_dimension()
+        return 384

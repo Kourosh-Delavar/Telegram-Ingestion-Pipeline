@@ -1,17 +1,9 @@
 import logging
-from pathlib import Path
-from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from .utils.base_msg import extract_base_message_data 
-import json
-from kafka.kafka_engine import KafkaOrchestrator
+from tg_ingestion_pipeline.ingestion.services.message_publisher import publish_extracted_message
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -41,16 +33,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         }
         logger.info(f"Text message received from {msg.from_user.username}")
         
-        # Configure Kafka producer (running on localhost:9092 by default)
-        cfg_path = Path(__file__).parent.parent.parent.parent / "kafka" / "configs" / "clients.json"
-        conf = json.load(open(cfg_path))["message_handler"]
-        
-        kafka = KafkaOrchestrator(conf)
-        kafka.send_message(
-            topic = "extracted-data",
-            key = msg_id,
-            data = data
-        )
+        publish_extracted_message(key=str(msg_id), data=data)
     except Exception as e:
         logger.error(f"Error handling text message: {e}")
         return None
