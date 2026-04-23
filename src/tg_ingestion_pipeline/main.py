@@ -67,15 +67,26 @@ def main() -> None:
     logger.info("Starting Telegram ingestion bot...")
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    # Try to connect to database, but allow bot to run without it (for testing)
     conn = get_connection()
     if conn is None:
-        raise RuntimeError('Unable to connect to PostgreSQL. Check DB environment variables.')
+        logger.warning('Unable to connect to PostgreSQL. The bot will run without database support.')
+        logger.warning('Make sure Docker containers are running: docker-compose up -d')
+    else:
+        try:
+            initialize_db(conn=conn)
+            logger.info('Database initialized successfully')
+        except Exception as e:
+            logger.error(f"Error initializing database: {e}")
 
-    initialize_db(conn=conn)
-
-    pipeline = TelegramDataPipeline()
-    pipeline.start_async()
-    logger.info('Background data pipeline started')
+    # Start background pipeline if database is available
+    try:
+        pipeline = TelegramDataPipeline()
+        pipeline.start_async()
+        logger.info('Background data pipeline started')
+    except Exception as e:
+        logger.warning(f'Could not start background pipeline: {e}')
+        logger.warning('Pipeline requires database connection')
 
     logger.info("Application built successfully")
     
