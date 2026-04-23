@@ -14,9 +14,13 @@ dependencies = [
     "pdfplumber",
     "python-docx",
     "openai-whisper",
-    "confluent-kafka",
+    "confluent-kafka[schemaregistry]",
+    "cachetools",
+    "attrs",
+    "fastavro",
+    "jsonschema",
     "psycopg2-binary",
-    "weaviate-client>=3.0.0",
+    "weaviate-client>=4.0.0",
     "sentence-transformers>=2.2.0",
 ]
 
