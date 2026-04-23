@@ -32,7 +32,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             logger.warning("Received text message without content")
             return None
 
-        msg_id = msg.effective_message.message_id
+        msg_id = msg.message_id
 
         data = {
             "type": "text",
