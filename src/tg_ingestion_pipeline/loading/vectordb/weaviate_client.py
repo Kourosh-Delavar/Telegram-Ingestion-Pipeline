@@ -2,8 +2,10 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 import weaviate
+from weaviate.collections.classes.config import Configure, Property, DataType, VectorDistances
 
 
 # Configure logging
@@ -14,52 +16,105 @@ WEAVIATE_CLASS = "TelegramMessage"
 
 
 def _build_auth_client(api_key: Optional[str]) -> Optional[Any]:
-    if api_key:
-        return weaviate.auth.Auth.api_key(api_key=api_key)
+    """Build authentication credentials for Weaviate v4."""
+    if api_key and api_key.strip():
+        logger.info("Using API key authentication for Weaviate")
+        return weaviate.auth.ApiKey(api_key=api_key)
     return None
 
 
+def _parse_weaviate_url(url: str) -> tuple:
+    """
+    Parse Weaviate URL and extract host and port.
+    
+    :param url: URL string (e.g., http://weaviate:8080 or https://cluster.weaviate.network)
+    :return: Tuple of (host, port)
+    """
+    parsed = urlparse(url)
+    
+    host = parsed.hostname or 'localhost'
+    port = parsed.port or (443 if parsed.scheme == 'https' else 8080)
+    
+    logger.debug(f"Parsed Weaviate URL: host={host}, port={port}")
+    return host, port
+
+
 class WeaviateClient:
-    """Client wrapper for Weaviate vector database operations."""
+    """Client wrapper for Weaviate vector database operations (v4 API)."""
 
     def __init__(self, url: Optional[str] = None, api_key: Optional[str] = None):
         load_dotenv('.env.weaviate')
-        self.url = url or os.getenv('WEAVIATE_URL', 'http://localhost:8080')
-        self.api_key = api_key or os.getenv('WEAVIATE_API_KEY')
-        auth_client = _build_auth_client(self.api_key)
-        self.client = weaviate.Client(url=self.url, auth_client_secret=auth_client)
+        self.url = url or os.getenv('WEAVIATE_URL', 'http://weaviate:8080')
+        self.api_key = api_key or os.getenv('WEAVIATE_API_KEY', '')
+        
+        logger.info(f"Initializing Weaviate client for {self.url}")
+        
+        # Parse URL and initialize client
+        try:
+            http_host, http_port = _parse_weaviate_url(self.url)
+            auth_credentials = _build_auth_client(self.api_key)
+            
+            # Use connect_to_local for docker deployment
+            # skip_init_checks=True to skip gRPC health checks when gRPC port is not exposed
+            self.client = weaviate.connect_to_local(
+                host=http_host,
+                port=http_port,
+                auth_credentials=auth_credentials,
+                skip_init_checks=True  # Skip gRPC checks if not available
+            )
+            
+            logger.info(f"Successfully connected to Weaviate at {self.url}")
+            
+            # Manual readiness check using HTTP only
+            ready = self.client.is_ready()
+            if not ready:
+                logger.warning("Weaviate server readiness check failed, but continuing anyway")
+            else:
+                logger.info("Weaviate server is ready")
+            
+        except Exception as e:
+            logger.error(f"Failed to connect to Weaviate at {self.url}: {e}")
+            raise
+        
         self._ensure_schema()
 
     def _ensure_schema(self) -> None:
-        if self.client.schema.contains(WEAVIATE_CLASS):
-            logger.info('Weaviate schema already exists.')
-            return
+        """Ensure TelegramMessage schema exists in Weaviate."""
+        try:
+            # Check if collection exists
+            if self.client.collections.exists(WEAVIATE_CLASS):
+                logger.info(f'Weaviate collection "{WEAVIATE_CLASS}" already exists.')
+                return
 
-        class_schema = {
-            'class': WEAVIATE_CLASS,
-            'vectorizer': 'none',  
-            'vectorIndexConfig': {
-                'distance': 'cosine', 
-            },
-            'properties': [
-                {'name': 'message_id', 'dataType': ['int']},
-                {'name': 'chat_id', 'dataType': ['int']},
-                {'name': 'message_type', 'dataType': ['string']},
-                {'name': 'content', 'dataType': ['text']},
-                {'name': 'user_id', 'dataType': ['int']},
-                {'name': 'username', 'dataType': ['string']},
-                {'name': 'reply_to', 'dataType': ['int']},
-                {'name': 'file_id', 'dataType': ['string']},
-                {'name': 'mime_type', 'dataType': ['string']},
-                {'name': 'file_name', 'dataType': ['string']},
-                {'name': 'duration_seconds', 'dataType': ['int']},
-            ],
-        }
-
-        self.client.schema.create_class(class_schema)
-        logger.info('Created Weaviate class schema for TelegramMessage with custom vector support.')
+            logger.info(f'Creating Weaviate collection "{WEAVIATE_CLASS}"...')
+            
+            # Create collection in v4 API using correct imports
+            self.client.collections.create(
+                name=WEAVIATE_CLASS,
+                vectorizer_config=Configure.Vectorizer.none(),
+                vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistances.COSINE),
+                properties=[
+                    Property(name="message_id", data_type=DataType.INT),
+                    Property(name="chat_id", data_type=DataType.INT),
+                    Property(name="message_type", data_type=DataType.TEXT),
+                    Property(name="content", data_type=DataType.TEXT),
+                    Property(name="user_id", data_type=DataType.INT),
+                    Property(name="username", data_type=DataType.TEXT),
+                    Property(name="reply_to", data_type=DataType.INT),
+                    Property(name="file_id", data_type=DataType.TEXT),
+                    Property(name="mime_type", data_type=DataType.TEXT),
+                    Property(name="file_name", data_type=DataType.TEXT),
+                    Property(name="duration_seconds", data_type=DataType.INT),
+                ]
+            )
+            logger.info(f'Successfully created Weaviate collection "{WEAVIATE_CLASS}".')
+            
+        except Exception as e:
+            logger.error(f"Error ensuring Weaviate schema: {e}")
+            raise
 
     def upsert_message(self, message: Dict[str, Any], vector: Optional[List[float]] = None) -> bool:
+        """Upsert a message with optional vector embedding to Weaviate."""
         object_payload = {
             'message_id': int(message.get('message_id', 0)) if message.get('message_id') is not None else None,
             'chat_id': int(message.get('chat_id', 0)) if message.get('chat_id') is not None else None,
@@ -75,12 +130,12 @@ class WeaviateClient:
         }
 
         try:
-            self.client.data_object.create(
-                data_object=object_payload,
-                class_name=WEAVIATE_CLASS,
+            collection = self.client.collections.get(WEAVIATE_CLASS)
+            collection.data.insert(
+                properties=object_payload,
                 vector=vector,
             )
-            logger.info('Stored message in Weaviate vector database.')
+            logger.info(f'Successfully stored message {object_payload.get("message_id")} in Weaviate.')
             return True
         except Exception as e:
             logger.error(f'Error writing object to Weaviate: {e}')
