@@ -41,11 +41,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         photo = msg.photo[-1]
         file_id: str = photo.file_id
         logger.info(f"Photo file_id: {file_id}")
-        mime_type: Optional[str] = photo.mime_type.lower() if photo.mime_type else None
-        logger.info(f"Photo mime_type: {mime_type}")
-
-        # Data directory for saving photo files
-        base_dir = Path(__file__).parent.parent.parent.parent
+        # Photos don't have mime_type in Telegram API, default to jpg
+        mime_type: Optional[str] = "image/jpeg"
         photo_dir = base_dir / "data" / "photos"
 
         # OCR the photo
