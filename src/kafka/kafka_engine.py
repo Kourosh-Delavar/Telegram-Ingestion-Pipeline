@@ -5,14 +5,23 @@ from confluent_kafka.schema_registry.avro import AvroSerializer
 import json
 import logging
 import threading
+import os
+from dotenv import load_dotenv
 
+
+# Load environment variables
+load_dotenv('.env.kafka')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Use environment variables for Docker/local configuration
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
+KAFKA_SCHEMA_REGISTRY_URL = os.getenv('KAFKA_SCHEMA_REGISTRY_URL', 'http://schema-registry:8081')
+
 DEFAULT_KAFKA_CONFIG = {
-    'bootstrap.servers': '127.0.0.1:9092',
+    'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
 }
 
 class KafkaOrchestrator:
@@ -47,7 +56,7 @@ class KafkaOrchestrator:
                 try:
                     with open(schema_path, 'r') as f:
                         schema_str = f.read()
-                    sr_client = SchemaRegistryClient({'url': 'http://localhost:8081'})
+                    sr_client = SchemaRegistryClient({'url': KAFKA_SCHEMA_REGISTRY_URL})
                     AvroSerializer(sr_client, schema_str)
                 except Exception as e:
                     logger.warning(f"Failed to load Avro schema; sending raw JSON instead: {e}")
